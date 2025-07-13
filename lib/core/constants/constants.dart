@@ -1,4 +1,5 @@
 import 'package:cartelle/features/home/screens/show_list_screen.dart';
+import 'package:cartelle/features/location/screen/location_show_screen.dart';
 import 'package:flutter/material.dart';
 
 class Constants {
@@ -12,7 +13,7 @@ class Constants {
   final List pages = [
     ShowListScreen(),
     ShowListScreen(),
-    ShowListScreen(),
+    LocationShowScreen(),
     ShowListScreen(),
   ];
 }

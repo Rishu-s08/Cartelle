@@ -1,6 +1,4 @@
 import 'package:cartelle/app_router.dart';
-import 'package:cartelle/core/common/loader.dart';
-import 'package:cartelle/core/errors/error_text.dart';
 import 'package:cartelle/features/auth/repository/auth_repository.dart';
 import 'package:cartelle/firebase_options.dart';
 import 'package:cartelle/theme/app_theme.dart';

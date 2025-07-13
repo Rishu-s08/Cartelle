@@ -172,13 +172,13 @@ class _AddListScreenState extends ConsumerState<AddListScreen> {
             padding: const EdgeInsets.all(16.0),
             child: ElevatedButton(
               onPressed: _saveList,
-              child: const Text('Save List'),
               style: ElevatedButton.styleFrom(
                 minimumSize: const Size(double.infinity, 50),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(16),
                 ),
               ),
+              child: const Text('Save List'),
             ),
           ),
         );

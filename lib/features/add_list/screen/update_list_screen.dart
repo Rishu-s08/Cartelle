@@ -1,7 +1,6 @@
 import 'package:cartelle/core/common/loader.dart';
 import 'package:cartelle/core/modals/list_model.dart';
 import 'package:cartelle/features/add_list/controller/add_list_controller.dart';
-import 'package:cartelle/features/auth/controller/auth_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -62,7 +61,6 @@ class _UpdateListScreenState extends ConsumerState<UpdateListScreen> {
     for (final item in newItems) {
       updatedMap[item] = oldItemsMap[item] ?? false;
     }
-    print(updatedMap);
     return updatedMap;
   }
 
@@ -75,7 +73,6 @@ class _UpdateListScreenState extends ConsumerState<UpdateListScreen> {
             .map((c) => c.text.trim())
             .where((e) => e.isNotEmpty)
             .toList();
-    print(items);
 
     if (listName.isEmpty || items.isEmpty || selectedLocation.isEmpty) {
       ScaffoldMessenger.of(
@@ -83,7 +80,6 @@ class _UpdateListScreenState extends ConsumerState<UpdateListScreen> {
       ).showSnackBar(const SnackBar(content: Text('Please fill all fields.')));
       return;
     }
-    final user = ref.watch(userProvider)!;
 
     ref
         .read(addListControllerProvider.notifier)

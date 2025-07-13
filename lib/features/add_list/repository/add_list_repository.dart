@@ -83,7 +83,6 @@ class AddListRepository {
           completedItems: itemsMap,
           location: location,
         );
-        print(updatedList);
         await _lists.doc(listId).update(updatedList.toMap());
       }
       return right(null);

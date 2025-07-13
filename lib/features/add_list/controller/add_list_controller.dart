@@ -1,7 +1,6 @@
 // ignore_for_file: public_member_api_docs, sort_constructors_first
 import 'package:cartelle/core/common/snackbar.dart';
 import 'package:cartelle/core/modals/list_model.dart';
-import 'package:cartelle/core/typedefs.dart';
 import 'package:cartelle/features/add_list/repository/add_list_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
