@@ -4,4 +4,5 @@ class RouteConstants {
   static String signUpRoute = 'signup';
   static String emailVerificationRoute = 'email-verify';
   static String editListRoute = 'edit-list';
+  static String addLocationRoute = 'add-location';
 }

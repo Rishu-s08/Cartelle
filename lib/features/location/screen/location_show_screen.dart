@@ -1,8 +1,14 @@
+import 'package:cartelle/core/common/loader.dart';
+import 'package:cartelle/core/constants/constants.dart';
+import 'package:cartelle/core/constants/route_constants.dart';
+import 'package:cartelle/core/errors/error_text.dart';
 import 'package:cartelle/core/modals/location_model.dart';
 import 'package:cartelle/core/permissions/location_permission.dart';
+import 'package:cartelle/features/location/controller/location_controller.dart';
 import 'package:cartelle/theme/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:permission_handler/permission_handler.dart';
 
@@ -47,6 +53,10 @@ final mockLocationsProvider = Provider<List<LocationModel>>((ref) {
 });
 
 class _LocationShowScreenState extends ConsumerState<LocationShowScreen> {
+  void navigateToAddLocation(BuildContext context) {
+    context.pushNamed(RouteConstants.addLocationRoute);
+  }
+
   void _openMapDialog(BuildContext context, LocationModel location) {
     showDialog(
       context: context,
@@ -59,8 +69,19 @@ class _LocationShowScreenState extends ConsumerState<LocationShowScreen> {
             child: GoogleMap(
               initialCameraPosition: CameraPosition(
                 target: LatLng(location.latitude, location.longitude),
+
                 zoom: 15,
               ),
+              circles: {
+                Circle(
+                  circleId: CircleId('location'),
+                  center: LatLng(location.latitude, location.longitude),
+                  radius: location.radiusInMeters.toDouble(),
+                  fillColor: Colors.blue.withAlpha((0.2 * 255).toInt()),
+                  strokeColor: Colors.blue,
+                  strokeWidth: 2,
+                ),
+              },
               markers: {
                 Marker(
                   markerId: const MarkerId('selected'),
@@ -128,60 +149,71 @@ class _LocationShowScreenState extends ConsumerState<LocationShowScreen> {
         ),
       );
     }
-    final locations = ref.watch(mockLocationsProvider);
 
-    return Scaffold(
-      // appBar: AppBar(title: const Text("Your Locations")),
-      body: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.symmetric(
-              horizontal: 16.0,
-              vertical: 12.0,
-            ),
-            child: Text(
-              "📍 Your Locations",
-              style: AppTheme.cupcakeLightTheme.textTheme.headlineSmall
-                  ?.copyWith(
-                    fontWeight: FontWeight.w600,
-                    color: const Color(0xFF444444),
-                    letterSpacing: 0.5,
-                  ),
-            ),
-          ),
-
-          Expanded(
-            child: ListView.builder(
-              itemCount: locations.length,
-              itemBuilder: (context, index) {
-                final loc = locations[index];
-                return Card(
-                  margin: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 8,
-                  ),
-                  child: ListTile(
-                    leading: const Icon(Icons.location_on),
-                    title: Text(loc.locationName),
-                    subtitle: Text(
-                      'Lat: ${loc.latitude}, Lng: ${loc.longitude}',
+    return ref
+        .watch(getUserLocationProvider)
+        .when(
+          data: (data) {
+            return Scaffold(
+              // appBar: AppBar(title: const Text("Your Locations")),
+              body: Column(
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16.0,
+                      vertical: 12.0,
                     ),
-                    trailing: const Icon(Icons.map),
-                    onTap: () => _openMapDialog(context, loc),
+                    child: Text(
+                      "📍 Your Locations",
+                      style: AppTheme.cupcakeLightTheme.textTheme.headlineSmall
+                          ?.copyWith(
+                            fontWeight: FontWeight.w600,
+                            color: const Color(0xFF444444),
+                            letterSpacing: 0.5,
+                          ),
+                    ),
                   ),
-                );
-              },
-            ),
-          ),
-        ],
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {},
-        tooltip: 'Add Location',
-        elevation: 16,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        child: Icon(Icons.add_location_alt_rounded),
-      ),
-    );
+
+                  Expanded(
+                    child: ListView.builder(
+                      itemCount: data.length,
+                      itemBuilder: (context, index) {
+                        final loc = data[index];
+                        return Card(
+                          margin: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 8,
+                          ),
+                          child: ListTile(
+                            leading: const Icon(Icons.location_on),
+                            title: Text(loc.locationName),
+
+                            subtitle: Text(
+                              'Lat: ${loc.latitude},\nLng: ${loc.longitude}',
+                            ),
+                            trailing: const Icon(Icons.map),
+                            onTap: () => _openMapDialog(context, loc),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                ],
+              ),
+              floatingActionButton: FloatingActionButton(
+                heroTag: 'unique_fab_add_location',
+                onPressed: () => navigateToAddLocation(context),
+                tooltip: 'Add Location',
+                elevation: 16,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Icon(Icons.add_location_alt_rounded),
+              ),
+            );
+          },
+          error: (error, stackTrace) => ErrorText(error: error.toString()),
+          loading: () => Loader(),
+        );
   }
 }

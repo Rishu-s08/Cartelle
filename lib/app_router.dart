@@ -5,6 +5,7 @@ import 'package:cartelle/features/auth/screens/email_verification.dart';
 import 'package:cartelle/features/auth/screens/login_screen.dart';
 import 'package:cartelle/features/auth/screens/sign_up_screen.dart';
 import 'package:cartelle/features/home/screens/home_screen.dart';
+import 'package:cartelle/features/location/screen/add_location_screen.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -78,6 +79,11 @@ class AppRouter {
           builder:
               (context, state) =>
                   UpdateListScreen(listId: state.pathParameters['listId']!),
+        ),
+        GoRoute(
+          name: RouteConstants.addLocationRoute,
+          path: '/add-location',
+          builder: (context, state) => AddLocationScreen(),
         ),
 
         GoRoute(
