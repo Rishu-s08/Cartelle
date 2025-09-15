@@ -2,6 +2,7 @@
 import 'package:cartelle/core/common/snackbar.dart';
 import 'package:cartelle/core/modals/list_model.dart';
 import 'package:cartelle/features/add_list/repository/add_list_repository.dart';
+import 'package:cartelle/features/auth/controller/auth_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -42,10 +43,13 @@ class AddListController extends StateNotifier<bool> {
       locationId: locationId,
     );
     state = false;
-    res.fold(
-      (l) => showSnackbar(context, l.message),
-      (r) => showSnackbar(context, "List uploaded successfully!"),
-    );
+    res.fold((l) => showSnackbar(context, l.message), (r) {
+      showSnackbar(context, "List uploaded successfully!");
+      _ref.read(userProvider.notifier).update((user) {
+        if (user == null) return null; // if it's null, don't update
+        return user.copyWith(locations: [...user.listIds ?? [], r.id]);
+      });
+    });
   }
 
   void getListDataById(String listId, BuildContext context) async {
@@ -60,6 +64,7 @@ class AddListController extends StateNotifier<bool> {
     required String listName,
     required List<String> listItems,
     required String location,
+    required String locationId,
     required Map<String, bool> itemsMap,
     required String listId,
     required BuildContext context,
@@ -69,6 +74,7 @@ class AddListController extends StateNotifier<bool> {
       listName: listName,
       listItems: listItems,
       itemsMap: itemsMap,
+      listlocationId: locationId,
       location: location,
       listId: listId,
     );

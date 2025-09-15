@@ -1,6 +1,8 @@
 import 'package:cartelle/core/common/loader.dart';
+import 'package:cartelle/core/errors/error_text.dart';
 import 'package:cartelle/core/modals/list_model.dart';
 import 'package:cartelle/features/add_list/controller/add_list_controller.dart';
+import 'package:cartelle/features/location/controller/location_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -20,14 +22,15 @@ class _UpdateListScreenState extends ConsumerState<UpdateListScreen> {
   late List<TextEditingController> _itemControllers;
   late ListModel originalList;
   late ListModel localList;
-  late String selectedLocation;
+  late String? selectedLocationId;
+  late String locationName;
 
   @override
   void initState() {
     super.initState();
     originalList = ref.read(listProvider)!;
     localList = originalList.copyWith();
-    selectedLocation = localList.location;
+    selectedLocationId = localList.locationId;
     titleController = TextEditingController(text: localList.listName);
     _itemControllers =
         localList.listItems
@@ -36,14 +39,6 @@ class _UpdateListScreenState extends ConsumerState<UpdateListScreen> {
   }
 
   // final List<UniqueKey> _itemKeys = [UniqueKey()];
-
-  final List<String> _locations = [
-    'Big Bazaar',
-    'Reliance Fresh',
-    'D-Mart',
-    'text',
-    'Add New Location',
-  ];
 
   void _addNewItemField() {
     setState(() {
@@ -67,14 +62,13 @@ class _UpdateListScreenState extends ConsumerState<UpdateListScreen> {
   void _updateList(ListModel list) {
     // Implement actual save logic
     final listName = titleController.text.trim();
-    final location = "text";
     final items =
         _itemControllers
             .map((c) => c.text.trim())
             .where((e) => e.isNotEmpty)
             .toList();
 
-    if (listName.isEmpty || items.isEmpty || selectedLocation.isEmpty) {
+    if (listName.isEmpty || items.isEmpty || selectedLocationId!.isEmpty) {
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(const SnackBar(content: Text('Please fill all fields.')));
@@ -90,7 +84,8 @@ class _UpdateListScreenState extends ConsumerState<UpdateListScreen> {
           ),
           listName: listName,
           listItems: items,
-          location: location,
+          locationId: selectedLocationId!,
+          location: locationName,
           listId: list.id,
           context: context,
         );
@@ -111,124 +106,154 @@ class _UpdateListScreenState extends ConsumerState<UpdateListScreen> {
   Widget build(BuildContext context) {
     // final list = ref.watch(listProvider)!;
     final isLoading = ref.watch(addListControllerProvider);
-    return isLoading
-        ? Loader()
-        : Scaffold(
-          appBar: AppBar(title: const Text('Update Buying List')),
-          body: Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: SingleChildScrollView(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  TextField(
-                    controller: titleController,
-                    decoration: const InputDecoration(
-                      labelText: 'List Title',
+    return ref
+        .watch(getUserLocationProvider)
+        .when(
+          data: (data) {
+            final selectedLoc = data.firstWhere(
+              (loc) => loc.locationId == selectedLocationId,
+            );
+            locationName = selectedLoc.locationName;
+            return isLoading
+                ? Loader()
+                : Scaffold(
+                  appBar: AppBar(title: const Text('Update Buying List')),
+                  body: Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: SingleChildScrollView(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          TextField(
+                            controller: titleController,
+                            decoration: const InputDecoration(
+                              labelText: 'List Title',
 
-                      prefixIcon: Icon(Icons.edit_note),
-                    ),
-                    maxLength: 30,
-                  ),
-                  const SizedBox(height: 16),
-                  DropdownButtonFormField<String>(
-                    value: localList.location,
-                    onChanged: (val) {
-                      setState(() => selectedLocation = val!);
-                    },
-                    items:
-                        _locations.map((location) {
-                          return DropdownMenuItem(
-                            value: location,
-                            child: Text(location),
-                          );
-                        }).toList(),
-                    decoration: const InputDecoration(
-                      labelText: 'Select Location',
-                      prefixIcon: Icon(Icons.location_on),
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-                  const Text(
-                    'Items:',
-                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                  ),
-                  const SizedBox(height: 8),
-                  ListView.builder(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    itemCount: _itemControllers.length,
-                    itemBuilder: (context, index) {
-                      return Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 4.0),
-                        child: Row(
-                          children: [
-                            const Icon(Icons.circle_outlined, size: 18),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: TextField(
-                                controller: _itemControllers[index],
-                                decoration: InputDecoration(
-                                  hintText: 'Item ${index + 1}',
-                                  suffixIcon: IconButton(
-                                    onPressed:
-                                        _itemControllers.length == 1
-                                            ? null
-                                            : () {
-                                              setState(() {
-                                                // _itemKeys.removeAt(index);
-                                                localList.completedItems.remove(
-                                                  localList.completedItems.keys
-                                                      .toList()[index],
-                                                );
-                                                localList.listItems.removeAt(
-                                                  index,
-                                                );
-                                                final controller =
-                                                    _itemControllers.removeAt(
-                                                      index,
-                                                    );
-                                                controller.dispose();
-                                              });
-                                            },
-                                    icon: const Icon(
-                                      Icons.delete_rounded,
-                                      color: Color.fromARGB(255, 186, 30, 19),
-                                    ),
-                                  ),
-                                ),
-                              ),
+                              prefixIcon: Icon(Icons.edit_note),
                             ),
-                          ],
-                        ),
-                      );
-                    },
-                  ),
-                  const SizedBox(height: 12),
-                  Center(
-                    child: TextButton.icon(
-                      onPressed: _addNewItemField,
-                      icon: const Icon(Icons.add),
-                      label: const Text('Add Item'),
+                            maxLength: 30,
+                          ),
+                          const SizedBox(height: 16),
+                          DropdownButtonFormField<String>(
+                            isExpanded: true,
+                            value: selectedLocationId,
+                            onChanged:
+                                (val) =>
+                                    setState(() => selectedLocationId = val),
+                            decoration: const InputDecoration(
+                              labelText: 'Select Location',
+                              prefixIcon: Icon(Icons.location_on),
+                              border: OutlineInputBorder(),
+                            ),
+                            items:
+                                data.map((loc) {
+                                  return DropdownMenuItem<String>(
+                                    value: loc.locationId,
+                                    child: Text(
+                                      loc.locationName,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  );
+                                }).toList(),
+                          ),
+                          const SizedBox(height: 24),
+                          const Text(
+                            'Items:',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          ListView.builder(
+                            shrinkWrap: true,
+                            physics: const NeverScrollableScrollPhysics(),
+                            itemCount: _itemControllers.length,
+                            itemBuilder: (context, index) {
+                              return Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 4.0,
+                                ),
+                                child: Row(
+                                  children: [
+                                    const Icon(Icons.circle_outlined, size: 18),
+                                    const SizedBox(width: 8),
+                                    Expanded(
+                                      child: TextField(
+                                        controller: _itemControllers[index],
+                                        decoration: InputDecoration(
+                                          hintText: 'Item ${index + 1}',
+                                          suffixIcon: IconButton(
+                                            onPressed:
+                                                _itemControllers.length == 1
+                                                    ? null
+                                                    : () {
+                                                      setState(() {
+                                                        // _itemKeys.removeAt(index);
+                                                        localList.completedItems
+                                                            .remove(
+                                                              localList
+                                                                  .completedItems
+                                                                  .keys
+                                                                  .toList()[index],
+                                                            );
+                                                        localList.listItems
+                                                            .removeAt(index);
+                                                        final controller =
+                                                            _itemControllers
+                                                                .removeAt(
+                                                                  index,
+                                                                );
+                                                        controller.dispose();
+                                                      });
+                                                    },
+                                            icon: const Icon(
+                                              Icons.delete_rounded,
+                                              color: Color.fromARGB(
+                                                255,
+                                                186,
+                                                30,
+                                                19,
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              );
+                            },
+                          ),
+                          const SizedBox(height: 12),
+                          Center(
+                            child: TextButton.icon(
+                              onPressed: _addNewItemField,
+                              icon: const Icon(Icons.add),
+                              label: const Text('Add Item'),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
-                ],
-              ),
-            ),
-          ),
-          bottomNavigationBar: Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: ElevatedButton(
-              onPressed: () => _updateList(localList),
-              style: ElevatedButton.styleFrom(
-                minimumSize: const Size(double.infinity, 50),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
-                ),
-              ),
-              child: const Text('Save List'),
-            ),
-          ),
+                  bottomNavigationBar: Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: ElevatedButton(
+                      onPressed: () => _updateList(localList),
+                      style: ElevatedButton.styleFrom(
+                        minimumSize: const Size(double.infinity, 50),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                      ),
+                      child: const Text('Save List'),
+                    ),
+                  ),
+                );
+          },
+          error: (error, stackTrace) => ErrorText(error: error.toString()),
+          loading: () => Loader(),
         );
   }
 }

@@ -1,6 +1,9 @@
 import 'package:cartelle/core/common/loader.dart';
+import 'package:cartelle/core/errors/error_text.dart';
+import 'package:cartelle/core/modals/location_model.dart';
 import 'package:cartelle/features/add_list/controller/add_list_controller.dart';
 import 'package:cartelle/features/auth/controller/auth_controller.dart';
+import 'package:cartelle/features/location/controller/location_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -18,12 +21,7 @@ class _AddListScreenState extends ConsumerState<AddListScreen> {
     TextEditingController(),
   ];
   final List<UniqueKey> _itemKeys = [UniqueKey()];
-  String? _selectedLocation;
-  final List<String> _locations = [
-    'Big Bazaar',
-    'Reliance Fresh',
-    'Add New Location',
-  ];
+  LocationModel? _selectedLocation;
 
   void _addNewItemField() {
     setState(() {
@@ -35,7 +33,6 @@ class _AddListScreenState extends ConsumerState<AddListScreen> {
   void _saveList() {
     // Implement actual save logic
     final listName = _listNameController.text.trim();
-    final location = "text";
     final items =
         _itemControllers
             .map((c) => c.text.trim())
@@ -48,11 +45,19 @@ class _AddListScreenState extends ConsumerState<AddListScreen> {
       ).showSnackBar(const SnackBar(content: Text('Please fill all fields.')));
       return;
     }
+    final location = _selectedLocation!.locationName;
     final user = ref.watch(userProvider)!;
 
     ref
         .read(addListControllerProvider.notifier)
-        .addList(listName, items, location, user.uid, "test", context);
+        .addList(
+          listName,
+          items,
+          location,
+          user.uid,
+          _selectedLocation!.locationId,
+          context,
+        );
     context.pop();
   }
 
@@ -69,118 +74,144 @@ class _AddListScreenState extends ConsumerState<AddListScreen> {
   @override
   Widget build(BuildContext context) {
     final isLoading = ref.watch(addListControllerProvider);
-    return isLoading
-        ? Loader()
-        : Scaffold(
-          appBar: AppBar(title: const Text('Create Shopping List')),
-          body: Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: SingleChildScrollView(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  TextField(
-                    controller: _listNameController,
-                    decoration: const InputDecoration(
-                      labelText: 'List Title',
+    return ref
+        .watch(getUserLocationProvider)
+        .when(
+          data: (data) {
+            return isLoading
+                ? Loader()
+                : Scaffold(
+                  appBar: AppBar(title: const Text('Create Shopping List')),
+                  body: Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: SingleChildScrollView(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          TextField(
+                            controller: _listNameController,
+                            decoration: const InputDecoration(
+                              labelText: 'List Title',
 
-                      prefixIcon: Icon(Icons.edit_note),
-                    ),
-                    maxLength: 30,
-                  ),
-                  const SizedBox(height: 16),
-                  DropdownButtonFormField<String>(
-                    value: _selectedLocation,
-                    onChanged: (val) {
-                      setState(() => _selectedLocation = val);
-                    },
-                    items:
-                        _locations.map((location) {
-                          return DropdownMenuItem(
-                            value: location,
-                            child: Text(location),
-                          );
-                        }).toList(),
-                    decoration: const InputDecoration(
-                      labelText: 'Select Location',
-                      prefixIcon: Icon(Icons.location_on),
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-                  const Text(
-                    'Items:',
-                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                  ),
-                  const SizedBox(height: 8),
-                  ListView.builder(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    itemCount: _itemControllers.length,
-                    itemBuilder: (context, index) {
-                      return Padding(
-                        key: _itemKeys[index],
-                        padding: const EdgeInsets.symmetric(vertical: 4.0),
-                        child: Row(
-                          children: [
-                            const Icon(Icons.circle_outlined, size: 18),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: TextField(
-                                controller: _itemControllers[index],
-                                decoration: InputDecoration(
-                                  hintText: 'Item ${index + 1}',
-                                  suffixIcon: IconButton(
-                                    onPressed:
-                                        _itemControllers.length == 1
-                                            ? null
-                                            : () {
-                                              setState(() {
-                                                final controller =
-                                                    _itemControllers.removeAt(
-                                                      index,
-                                                    );
-                                                controller.dispose();
-                                                _itemKeys.removeAt(index);
-                                              });
-                                            },
-                                    icon: const Icon(
-                                      Icons.delete_rounded,
-                                      color: Color.fromARGB(255, 186, 30, 19),
-                                    ),
-                                  ),
-                                ),
-                              ),
+                              prefixIcon: Icon(Icons.edit_note),
                             ),
-                          ],
-                        ),
-                      );
-                    },
-                  ),
-                  const SizedBox(height: 12),
-                  Center(
-                    child: TextButton.icon(
-                      onPressed: _addNewItemField,
-                      icon: const Icon(Icons.add),
-                      label: const Text('Add Item'),
+                            maxLength: 30,
+                          ),
+                          const SizedBox(height: 16),
+                          DropdownButtonFormField<LocationModel>(
+                            isExpanded: true,
+                            value: _selectedLocation,
+                            onChanged:
+                                (val) =>
+                                    setState(() => _selectedLocation = val),
+                            decoration: const InputDecoration(
+                              labelText: 'Select Location',
+                              prefixIcon: Icon(Icons.location_on),
+                              border: OutlineInputBorder(),
+                            ),
+                            items:
+                                data.map((loc) {
+                                  return DropdownMenuItem<LocationModel>(
+                                    value: loc,
+                                    child: Text(
+                                      loc.locationName,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  );
+                                }).toList(),
+                          ),
+                          const SizedBox(height: 24),
+                          const Text(
+                            'Items:',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          ListView.builder(
+                            shrinkWrap: true,
+                            physics: const NeverScrollableScrollPhysics(),
+                            itemCount: _itemControllers.length,
+                            itemBuilder: (context, index) {
+                              return Padding(
+                                key: _itemKeys[index],
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 4.0,
+                                ),
+                                child: Row(
+                                  children: [
+                                    const Icon(Icons.circle_outlined, size: 18),
+                                    const SizedBox(width: 8),
+                                    Expanded(
+                                      child: TextField(
+                                        controller: _itemControllers[index],
+                                        decoration: InputDecoration(
+                                          hintText: 'Item ${index + 1}',
+                                          suffixIcon: IconButton(
+                                            onPressed:
+                                                _itemControllers.length == 1
+                                                    ? null
+                                                    : () {
+                                                      setState(() {
+                                                        final controller =
+                                                            _itemControllers
+                                                                .removeAt(
+                                                                  index,
+                                                                );
+                                                        controller.dispose();
+                                                        _itemKeys.removeAt(
+                                                          index,
+                                                        );
+                                                      });
+                                                    },
+                                            icon: const Icon(
+                                              Icons.delete_rounded,
+                                              color: Color.fromARGB(
+                                                255,
+                                                186,
+                                                30,
+                                                19,
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              );
+                            },
+                          ),
+                          const SizedBox(height: 12),
+                          Center(
+                            child: TextButton.icon(
+                              onPressed: _addNewItemField,
+                              icon: const Icon(Icons.add),
+                              label: const Text('Add Item'),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
-                ],
-              ),
-            ),
-          ),
-          bottomNavigationBar: Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: ElevatedButton(
-              onPressed: _saveList,
-              style: ElevatedButton.styleFrom(
-                minimumSize: const Size(double.infinity, 50),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
-                ),
-              ),
-              child: const Text('Save List'),
-            ),
-          ),
+                  bottomNavigationBar: Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: ElevatedButton(
+                      onPressed: _saveList,
+                      style: ElevatedButton.styleFrom(
+                        minimumSize: const Size(double.infinity, 50),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                      ),
+                      child: const Text('Save List'),
+                    ),
+                  ),
+                );
+          },
+          error: (error, stackTrace) => ErrorText(error: error.toString()),
+          loading: () => Loader(),
         );
   }
 }

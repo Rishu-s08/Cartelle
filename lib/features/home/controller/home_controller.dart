@@ -1,5 +1,6 @@
 import 'package:cartelle/core/common/snackbar.dart';
 import 'package:cartelle/core/modals/list_model.dart';
+import 'package:cartelle/core/modals/reminder_model.dart';
 import 'package:cartelle/features/auth/controller/auth_controller.dart';
 import 'package:cartelle/features/home/repository/home_repository.dart';
 import 'package:flutter/cupertino.dart';
@@ -7,6 +8,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 final fetchListsProvider = StreamProvider((ref) {
   return ref.watch(homeControllerProvider).fetchLists();
+});
+
+final fetchRemindersProvider = StreamProvider((ref) {
+  return ref.watch(homeControllerProvider).fetchReminders();
 });
 
 final homeControllerProvider = Provider((ref) {
@@ -21,8 +26,14 @@ class HomeController {
       _ref = ref;
 
   Stream<List<ListModel>> fetchLists() {
-    final userId = _ref.read(userProvider)!.uid;
+    final userId = _ref.watch(userProvider)!.uid;
+    print(userId);
     return _homeRepository.fetchLists(userId);
+  }
+
+  Stream<List<ReminderModel>> fetchReminders() {
+    final userId = _ref.watch(userProvider)!.uid;
+    return _homeRepository.fetchReminders(userId);
   }
 
   void checkedChanged(
@@ -43,6 +54,13 @@ class HomeController {
     final res = await _homeRepository.deleteList(listId);
     res.fold((l) => showSnackbar(context, l.message), (onRight) {
       showSnackbar(context, 'List deleted successfully');
+    });
+  }
+
+  void deleteReminder(String reminderId, BuildContext context) async {
+    final res = await _homeRepository.deleteReminder(reminderId);
+    res.fold((l) => showSnackbar(context, l.message), (onRight) {
+      showSnackbar(context, 'Reminder deleted successfully');
     });
   }
 }

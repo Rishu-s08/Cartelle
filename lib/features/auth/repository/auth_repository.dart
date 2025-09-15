@@ -180,6 +180,8 @@ class AuthRepository {
           uid: user.uid,
           email: user.email!,
           name: user.displayName ?? 'No name',
+          listIds: [],
+          locations: [],
           createdAt: DateTime.now(),
           isAuthenticated: true,
         );
@@ -192,6 +194,15 @@ class AuthRepository {
       return right(userModel);
     } on FirebaseException catch (e) {
       throw e.toString();
+    } catch (e) {
+      return left(Failure(e.toString()));
+    }
+  }
+
+  FutureVoid updateUserName(String newName, String uid) async {
+    try {
+      await _user.doc(uid).update({'name': newName});
+      return right(null);
     } catch (e) {
       return left(Failure(e.toString()));
     }

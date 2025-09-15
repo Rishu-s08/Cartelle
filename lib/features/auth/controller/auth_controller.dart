@@ -30,10 +30,10 @@ class AuthController extends StateNotifier<bool> {
     state = true;
     final user = await _authRepository.authenticateWithGoogle();
     state = false;
-    user.fold(
-      (l) => showSnackbar(context, l.message),
-      (r) => _ref.read(userProvider.notifier).update((state) => r),
-    );
+    user.fold((l) => showSnackbar(context, l.message), (r) {
+      print("User Model: $r");
+      _ref.read(userProvider.notifier).update((state) => r);
+    });
   }
 
   Future<bool> signUpWithEmailAndPass(
@@ -100,6 +100,17 @@ class AuthController extends StateNotifier<bool> {
 
   Stream<UserModel> getUserData(String uid) {
     return _authRepository.getUserData(uid);
+  }
+
+  void updateUserName(String newName, BuildContext context) {
+    final uid = _ref.read(userProvider)!.uid;
+    _authRepository.updateUserName(newName, uid).then((result) {
+      result.fold((l) => showSnackbar(context, l.message), (r) {
+        _ref
+            .read(userProvider.notifier)
+            .update((state) => state?.copyWith(name: newName));
+      });
+    });
   }
 
   void signOut(BuildContext context) async {

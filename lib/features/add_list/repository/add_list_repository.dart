@@ -19,10 +19,13 @@ class AddListRepository {
   AddListRepository({required FirebaseFirestore firebaseFirestore})
     : _firebaseFirestore = firebaseFirestore;
 
+  CollectionReference get _users =>
+      _firebaseFirestore.collection(FirebaseConstants.usersCollection);
+
   CollectionReference get _lists =>
       _firebaseFirestore.collection(FirebaseConstants.listsCollection);
 
-  FutureVoid addList({
+  FutureEither<ListModel> addList({
     required String listName,
     required List<String> listItems,
     required String location,
@@ -39,10 +42,12 @@ class AddListRepository {
       locationId: locationId,
       completedItems: Map.fromEntries(listItems.map((e) => MapEntry(e, false))),
     );
-
     try {
       await _lists.doc(list.id).set(list.toMap());
-      return right(null);
+      await _users.doc(userId).update({
+        'listIds': FieldValue.arrayUnion([list.id]),
+      });
+      return right(list);
     } on FirebaseException catch (e) {
       throw e.message!;
     } catch (e) {
@@ -69,6 +74,7 @@ class AddListRepository {
   FutureVoid updateList({
     required String listName,
     required List<String> listItems,
+    required String listlocationId,
     required String location,
     required String listId,
     required Map<String, bool> itemsMap,
@@ -80,6 +86,7 @@ class AddListRepository {
         final updatedList = existingList.copyWith(
           listName: listName,
           listItems: listItems,
+          locationId: listlocationId,
           completedItems: itemsMap,
           location: location,
         );

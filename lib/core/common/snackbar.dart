@@ -1,3 +1,4 @@
+import 'package:cartelle/main.dart';
 import 'package:flutter/material.dart';
 
 void showSnackbar(
@@ -9,23 +10,20 @@ void showSnackbar(
 }) {
   final theme = Theme.of(context);
 
-  ScaffoldMessenger.of(context)
-    ..hideCurrentSnackBar()
-    ..showSnackBar(
-      SnackBar(
-        content: Text(
-          message,
-          style: theme.textTheme.bodyMedium?.copyWith(
-            color: theme.colorScheme.onPrimary,
-          ),
-        ),
-        backgroundColor: backgroundColor ?? theme.colorScheme.primary,
-        behavior: SnackBarBehavior.floating,
-        margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        elevation: 10,
-        duration: duration,
-        action: action,
+  final snackBar = SnackBar(
+    content: Text(
+      message,
+      style: theme.textTheme.bodyMedium?.copyWith(
+        color: theme.colorScheme.onPrimary,
       ),
-    );
+    ),
+    backgroundColor: backgroundColor ?? theme.colorScheme.primary,
+    behavior: SnackBarBehavior.floating,
+    margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+    elevation: 10,
+    duration: duration,
+    action: action,
+  );
+  scaffoldMessengerKey.currentState?.showSnackBar(snackBar);
 }

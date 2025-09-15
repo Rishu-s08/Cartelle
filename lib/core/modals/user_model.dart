@@ -1,6 +1,3 @@
-// ignore_for_file: public_member_api_docs, sort_constructors_first
-import 'dart:convert';
-
 import 'package:flutter/foundation.dart';
 
 class UserModel {
@@ -8,6 +5,7 @@ class UserModel {
   final String email;
   final String name;
   final List<String>? locations;
+  final List<String>? listIds;
   final DateTime createdAt;
   final bool isAuthenticated;
   UserModel({
@@ -15,6 +13,7 @@ class UserModel {
     required this.email,
     required this.name,
     this.locations,
+    this.listIds,
     required this.createdAt,
     required this.isAuthenticated,
   });
@@ -24,6 +23,7 @@ class UserModel {
     String? email,
     String? name,
     List<String>? locations,
+    List<String>? listIds,
     DateTime? createdAt,
     bool? isAuthenticated,
   }) {
@@ -32,6 +32,7 @@ class UserModel {
       email: email ?? this.email,
       name: name ?? this.name,
       locations: locations ?? this.locations,
+      listIds: listIds ?? this.listIds,
       createdAt: createdAt ?? this.createdAt,
       isAuthenticated: isAuthenticated ?? this.isAuthenticated,
     );
@@ -43,6 +44,7 @@ class UserModel {
       'email': email,
       'name': name,
       'locations': locations,
+      'listIds': listIds,
       'createdAt': createdAt.millisecondsSinceEpoch,
       'isAuthenticated': isAuthenticated,
     };
@@ -55,8 +57,10 @@ class UserModel {
       name: map['name'] as String,
       locations:
           map['locations'] != null
-              ? List<String>.from((map['locations'] as List<String>))
+              ? List<String>.from((map['locations']))
               : null,
+      listIds:
+          map['listIds'] != null ? List<String>.from((map['listIds'])) : null,
       createdAt: DateTime.fromMillisecondsSinceEpoch(map['createdAt'] as int),
       isAuthenticated: map['isAuthenticated'] as bool,
     );
@@ -64,7 +68,7 @@ class UserModel {
 
   @override
   String toString() {
-    return 'UserModel(uid: $uid, email: $email, name: $name, locations: $locations, createdAt: $createdAt, isAuthenticated: $isAuthenticated)';
+    return 'UserModel(uid: $uid, email: $email, name: $name, locations: $locations, listIds: $listIds, createdAt: $createdAt, isAuthenticated: $isAuthenticated)';
   }
 
   @override
@@ -75,6 +79,7 @@ class UserModel {
         other.email == email &&
         other.name == name &&
         listEquals(other.locations, locations) &&
+        listEquals(other.listIds, listIds) &&
         other.createdAt == createdAt &&
         other.isAuthenticated == isAuthenticated;
   }
@@ -85,12 +90,8 @@ class UserModel {
         email.hashCode ^
         name.hashCode ^
         locations.hashCode ^
+        listIds.hashCode ^
         createdAt.hashCode ^
         isAuthenticated.hashCode;
   }
-
-  String toJson() => json.encode(toMap());
-
-  factory UserModel.fromJson(String source) =>
-      UserModel.fromMap(json.decode(source) as Map<String, dynamic>);
 }

@@ -112,18 +112,25 @@ class _ListCardState extends ConsumerState<ListCard> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Row(
-                  children: [
-                    const Icon(Icons.location_on, size: 16),
-                    const SizedBox(width: 4),
-                    Text(
-                      widget.location,
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        fontWeight: FontWeight.w500,
+                Expanded(
+                  child: Row(
+                    children: [
+                      const Icon(Icons.location_on, size: 16),
+                      const SizedBox(width: 4),
+                      Expanded(
+                        child: Text(
+                          widget.location,
+                          overflow: TextOverflow.ellipsis,
+
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
+                SizedBox(width: 23),
                 Text(
                   '${widget.createdAt.day}/${widget.createdAt.month}/${widget.createdAt.year}',
                   style: theme.textTheme.bodySmall?.copyWith(

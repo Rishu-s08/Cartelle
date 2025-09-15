@@ -1,6 +1,7 @@
 import 'package:cartelle/core/constants/firebase_constants.dart';
 import 'package:cartelle/core/failure.dart';
 import 'package:cartelle/core/modals/list_model.dart';
+import 'package:cartelle/core/modals/reminder_model.dart';
 import 'package:cartelle/core/providers/firebase_providers.dart';
 import 'package:cartelle/core/typedefs.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -18,6 +19,9 @@ class HomeRepository {
   CollectionReference get listsCollection =>
       _firestore.collection(FirebaseConstants.listsCollection);
 
+  CollectionReference get remindersCollection =>
+      _firestore.collection(FirebaseConstants.remindersCollection);
+
   Stream<List<ListModel>> fetchLists(String userId) {
     return listsCollection
         .where('userId', isEqualTo: userId)
@@ -29,6 +33,23 @@ class HomeRepository {
                   .map(
                     (doc) =>
                         ListModel.fromMap(doc.data() as Map<String, dynamic>),
+                  )
+                  .toList(),
+        );
+  }
+
+  Stream<List<ReminderModel>> fetchReminders(String userId) {
+    return remindersCollection
+        .where('userId', isEqualTo: userId)
+        .orderBy('createdAt', descending: true)
+        .snapshots()
+        .map(
+          (snapshots) =>
+              snapshots.docs
+                  .map(
+                    (doc) => ReminderModel.fromMap(
+                      doc.data() as Map<String, dynamic>,
+                    ),
                   )
                   .toList(),
         );
@@ -57,6 +78,17 @@ class HomeRepository {
       throw e.message!;
     } catch (e) {
       return left(Failure("something went wrong while deleting the list"));
+    }
+  }
+
+  FutureVoid deleteReminder(String reminderId) async {
+    try {
+      await remindersCollection.doc(reminderId).delete();
+      return right(null);
+    } on FirebaseException catch (e) {
+      throw e.message!;
+    } catch (e) {
+      return left(Failure("something went wrong while deleting the reminder"));
     }
   }
 }

@@ -1,11 +1,16 @@
 import 'package:cartelle/core/constants/route_constants.dart';
+import 'package:cartelle/features/add_list/screen/add_list_screen.dart';
 import 'package:cartelle/features/add_list/screen/update_list_screen.dart';
+import 'package:cartelle/features/add_reminder/screen/add_reminder_screen.dart';
 import 'package:cartelle/features/auth/controller/auth_controller.dart';
 import 'package:cartelle/features/auth/screens/email_verification.dart';
 import 'package:cartelle/features/auth/screens/login_screen.dart';
 import 'package:cartelle/features/auth/screens/sign_up_screen.dart';
 import 'package:cartelle/features/home/screens/home_screen.dart';
 import 'package:cartelle/features/location/screen/add_location_screen.dart';
+import 'package:cartelle/features/profile/screen/about_screen.dart';
+import 'package:cartelle/features/profile/screen/edit_profile_screen.dart';
+import 'package:cartelle/features/profile/screen/profile_settings_screen.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -90,6 +95,36 @@ class AppRouter {
           name: RouteConstants.signUpRoute,
           path: '/signUp',
           builder: (context, state) => const SignUpScreen(),
+        ),
+
+        GoRoute(
+          name: RouteConstants.profileSettingsRoute,
+          path: '/profile-settings',
+          builder: (context, state) => ProfileSettingsScreen(),
+        ),
+
+        GoRoute(
+          name: RouteConstants.editProfileRoute,
+          path: '/edit-profile',
+          builder: (context, state) => EditProfileScreen(),
+        ),
+
+        GoRoute(
+          name: RouteConstants.aboutRoute,
+          path: '/about',
+          builder: (context, state) => AboutScreen(),
+        ),
+
+        GoRoute(
+          name: RouteConstants.addReminderRoute,
+          path: '/add-reminder',
+          builder: (context, state) => AddReminderScreen(),
+        ),
+
+        GoRoute(
+          name: RouteConstants.addListRoute,
+          path: '/add-list',
+          builder: (context, state) => AddListScreen(),
         ),
       ],
     );

@@ -47,11 +47,38 @@ class LocationController extends StateNotifier<bool> {
     state = false;
     res.fold((l) => showSnackbar(context, l.message), (r) {
       showSnackbar(context, "Location saved successfully!");
+      _ref.read(userProvider.notifier).update((user) {
+        if (user == null) return null; // if it's null, don't update
+        return user.copyWith(
+          locations: [...user.locations ?? [], r.locationId],
+        );
+      });
     });
   }
 
   Stream<List<LocationModel>> getUserLocations() {
     final userId = _ref.read(userProvider)!.uid;
     return _locationRepository.getUserLocations(userId);
+  }
+
+  Future<void> syncGeofencesOnStartup() async {
+    final uid = _ref.read(userProvider)!.uid;
+    await _locationRepository.syncGeofencesOnStartup(uid);
+  }
+
+  Future<List<LocationModel>> fetchLocationsLinkedToNotes() {
+    final uid = _ref.read(userProvider)!.uid;
+    return _locationRepository.fetchLocationsLinkedToNotes(uid);
+  }
+
+  void deleteLocation(String locationId, BuildContext context) async {
+    state = true;
+    final uid = _ref.read(userProvider)!.uid;
+    final res = await _locationRepository.deleteLocation(locationId, uid);
+    state = false;
+    res.fold(
+      (l) => showSnackbar(context, l.message),
+      (r) => showSnackbar(context, "Location deleted successfully!"),
+    );
   }
 }

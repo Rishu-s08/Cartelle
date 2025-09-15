@@ -1,5 +1,5 @@
 import 'package:cartelle/core/common/loader.dart';
-import 'package:cartelle/core/constants/constants.dart';
+import 'package:cartelle/core/common/snackbar.dart';
 import 'package:cartelle/core/constants/route_constants.dart';
 import 'package:cartelle/core/errors/error_text.dart';
 import 'package:cartelle/core/modals/location_model.dart';
@@ -19,38 +19,6 @@ class LocationShowScreen extends ConsumerStatefulWidget {
   ConsumerState<ConsumerStatefulWidget> createState() =>
       _LocationShowScreenState();
 }
-
-final mockLocationsProvider = Provider<List<LocationModel>>((ref) {
-  return [
-    LocationModel(
-      locationId: '1',
-      locationName: 'Big Bazaar - Sector 21',
-      latitude: 28.6139,
-      userId: "test",
-      radiusInMeters: 32,
-      createdAt: DateTime.now(),
-      longitude: 77.2090,
-    ),
-    LocationModel(
-      locationId: '2',
-      locationName: 'Reliance Fresh - Ring Road',
-      latitude: 28.6200,
-      userId: "test",
-      radiusInMeters: 32,
-      createdAt: DateTime.now(),
-      longitude: 77.2200,
-    ),
-    LocationModel(
-      locationId: '3',
-      locationName: 'D-Mart - Outer Delhi',
-      latitude: 28.6300,
-      userId: "test",
-      radiusInMeters: 32,
-      createdAt: DateTime.now(),
-      longitude: 77.2000,
-    ),
-  ];
-});
 
 class _LocationShowScreenState extends ConsumerState<LocationShowScreen> {
   void navigateToAddLocation(BuildContext context) {
@@ -103,11 +71,18 @@ class _LocationShowScreenState extends ConsumerState<LocationShowScreen> {
 
   bool _hasPermission = false;
   bool _checked = false;
+  late List<String> locationIdList;
 
   @override
   void initState() {
     super.initState();
+    final Future<List<LocationModel>> locationsLinkedWithList =
+        ref
+            .read(locationControllerProvider.notifier)
+            .fetchLocationsLinkedToNotes();
     WidgetsBinding.instance.addPostFrameCallback((_) async {
+      final locations = await locationsLinkedWithList;
+      locationIdList = locations.map((loc) => loc.locationId).toList();
       final result = await requestLocationPermission();
       result.match(
         (failure) {
@@ -156,50 +131,122 @@ class _LocationShowScreenState extends ConsumerState<LocationShowScreen> {
           data: (data) {
             return Scaffold(
               // appBar: AppBar(title: const Text("Your Locations")),
-              body: Column(
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16.0,
-                      vertical: 12.0,
-                    ),
-                    child: Text(
-                      "📍 Your Locations",
-                      style: AppTheme.cupcakeLightTheme.textTheme.headlineSmall
-                          ?.copyWith(
-                            fontWeight: FontWeight.w600,
-                            color: const Color(0xFF444444),
-                            letterSpacing: 0.5,
-                          ),
-                    ),
-                  ),
-
-                  Expanded(
-                    child: ListView.builder(
-                      itemCount: data.length,
-                      itemBuilder: (context, index) {
-                        final loc = data[index];
-                        return Card(
-                          margin: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 8,
-                          ),
-                          child: ListTile(
-                            leading: const Icon(Icons.location_on),
-                            title: Text(loc.locationName),
-
-                            subtitle: Text(
-                              'Lat: ${loc.latitude},\nLng: ${loc.longitude}',
+              body:
+                  data.isEmpty
+                      ? const Center(child: Text("No locations found"))
+                      : Column(
+                        children: [
+                          Padding(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 16.0,
+                              vertical: 12.0,
                             ),
-                            trailing: const Icon(Icons.map),
-                            onTap: () => _openMapDialog(context, loc),
+                            child: Text(
+                              "📍 Your Locations",
+                              style: AppTheme
+                                  .cupcakeLightTheme
+                                  .textTheme
+                                  .headlineSmall
+                                  ?.copyWith(
+                                    fontWeight: FontWeight.w600,
+                                    color: const Color(0xFF444444),
+                                    letterSpacing: 0.5,
+                                  ),
+                            ),
                           ),
-                        );
-                      },
-                    ),
-                  ),
-                ],
-              ),
+
+                          Expanded(
+                            child: ListView.builder(
+                              itemCount: data.length,
+                              itemBuilder: (context, index) {
+                                final loc = data[index];
+                                return Dismissible(
+                                  key: Key(loc.locationId),
+                                  direction: DismissDirection.endToStart,
+                                  dismissThresholds: {
+                                    DismissDirection.endToStart:
+                                        0.4, // needs 40% swipe before deleting
+                                  },
+                                  movementDuration: const Duration(
+                                    milliseconds: 400,
+                                  ), // slower animation
+                                  resizeDuration: const Duration(
+                                    milliseconds: 300,
+                                  ), // smooth shrinking // swipe left to delete
+                                  background: Container(
+                                    alignment: Alignment.centerRight,
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 20,
+                                    ),
+                                    color: Colors.red,
+                                    child: const Icon(
+                                      Icons.delete,
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                                  confirmDismiss: (direction) async {
+                                    bool isInUse = locationIdList.contains(
+                                      loc.locationId,
+                                    );
+                                    if (isInUse) {
+                                      return await showDialog(
+                                        context: context,
+                                        builder:
+                                            (ctx) => AlertDialog(
+                                              title: const Text(
+                                                "Location in use",
+                                              ),
+                                              content: const Text(
+                                                "This location cannot be deleted, as it is linked to one of the shopping lists.",
+                                              ),
+                                              actions: [
+                                                TextButton(
+                                                  onPressed:
+                                                      () => Navigator.of(
+                                                        ctx,
+                                                      ).pop(false),
+                                                  child: const Text("OK!"),
+                                                ),
+                                                // TextButton(
+                                                //   onPressed:
+                                                //       () => Navigator.of(ctx).pop(true),
+                                                //   child: const Text("Remove"),
+                                                // ),
+                                              ],
+                                            ),
+                                      );
+                                    }
+                                    return true; // allow delete
+                                  },
+                                  onDismissed: (direction) {
+                                    deleteLocation(loc.locationId);
+                                    showSnackbar(
+                                      context,
+                                      "${loc.locationName} deleted",
+                                    );
+                                  },
+                                  child: Card(
+                                    margin: const EdgeInsets.symmetric(
+                                      horizontal: 16,
+                                      vertical: 8,
+                                    ),
+                                    child: ListTile(
+                                      leading: const Icon(Icons.location_on),
+                                      title: Text(loc.locationName),
+
+                                      subtitle: Text(
+                                        'Lat: ${loc.latitude},\nLng: ${loc.longitude}',
+                                      ),
+                                      trailing: const Icon(Icons.map),
+                                      onTap: () => _openMapDialog(context, loc),
+                                    ),
+                                  ),
+                                );
+                              },
+                            ),
+                          ),
+                        ],
+                      ),
               floatingActionButton: FloatingActionButton(
                 heroTag: 'unique_fab_add_location',
                 onPressed: () => navigateToAddLocation(context),
@@ -215,5 +262,11 @@ class _LocationShowScreenState extends ConsumerState<LocationShowScreen> {
           error: (error, stackTrace) => ErrorText(error: error.toString()),
           loading: () => Loader(),
         );
+  }
+
+  void deleteLocation(location) {
+    ref
+        .read(locationControllerProvider.notifier)
+        .deleteLocation(location, context);
   }
 }
